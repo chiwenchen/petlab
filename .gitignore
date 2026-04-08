@@ -1,0 +1,24 @@
+node_modules/
+.wrangler/
+.dev.vars
+.env
+.env.*
+!.env.example
+dist/
+build/
+.DS_Store
+*.log
+
+# iOS
+xcuserdata/
+*.xcuserstate
+DerivedData/
+*.xcodeproj/project.xcworkspace/
+
+# Next.js
+.next/
+out/
+
+# Editors
+.vscode/
+.idea/
