@@ -4,6 +4,7 @@ import { logger } from "hono/logger";
 import type { Env, AppVariables } from "./types";
 import authRoutes from "./routes/auth";
 import petsRoutes from "./routes/pets";
+import reportsRoutes from "./routes/reports";
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -11,7 +12,7 @@ app.use("*", logger());
 app.use(
   "*",
   cors({
-    origin: (origin) => origin, // permissive for v1 (iOS app + web viewer same project)
+    origin: ["https://petlab.redarch.dev", "http://localhost:3000"],
     allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     credentials: false,
@@ -29,6 +30,7 @@ app.get("/", (c) =>
 
 app.route("/auth", authRoutes);
 app.route("/pets", petsRoutes);
+app.route("/", reportsRoutes);
 
 app.onError((err, c) => {
   console.error("unhandled", err);
