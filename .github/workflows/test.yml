@@ -19,3 +19,13 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Typecheck
         run: bun run typecheck
+      - name: Create test secrets
+        run: |
+          cat > .dev.vars << 'VARS'
+          JWT_SECRET=test-jwt-secret-for-ci-only
+          RESEND_API_KEY=re_test_fake
+          ANTHROPIC_API_KEY=sk-ant-test-fake
+          OTP_FROM_EMAIL=test@example.com
+          VARS
+      - name: Test with coverage (80% threshold enforced)
+        run: bun run test:coverage
