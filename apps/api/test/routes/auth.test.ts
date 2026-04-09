@@ -18,7 +18,8 @@ describe("POST /auth/request", () => {
       body: JSON.stringify({}),
     });
     expect(res.status).toBe(400);
-    const body = await res.json<{ error: string }>();
+    const body = await res.json<{ success: boolean; error: string }>();
+    expect(body.success).toBe(false);
     expect(body.error).toBe("invalid_email");
   });
 
@@ -32,14 +33,11 @@ describe("POST /auth/request", () => {
   });
 
   it("creates OTP row in DB for valid email", async () => {
-    // This will fail on email send (no real Resend key), but OTP row should exist
-    const res = await fetchApp("/auth/request", {
+    await fetchApp("/auth/request", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: "test@example.com" }),
     });
-    // Will be 502 (send_failed) because Resend API key is not real
-    // But OTP row should have been created before the email send attempt
     const row = await env.DB.prepare("SELECT email FROM auth_otps WHERE email = ?")
       .bind("test@example.com")
       .first<{ email: string }>();
@@ -55,7 +53,8 @@ describe("POST /auth/verify", () => {
       body: JSON.stringify({}),
     });
     expect(res.status).toBe(400);
-    const body = await res.json<{ error: string }>();
+    const body = await res.json<{ success: boolean; error: string }>();
+    expect(body.success).toBe(false);
     expect(body.error).toBe("invalid_request");
   });
 
@@ -66,7 +65,7 @@ describe("POST /auth/verify", () => {
       body: JSON.stringify({ email: "none@example.com", code: "123456" }),
     });
     expect(res.status).toBe(400);
-    const body = await res.json<{ error: string }>();
+    const body = await res.json<{ success: boolean; error: string }>();
     expect(body.error).toBe("no_otp");
   });
 
@@ -86,9 +85,10 @@ describe("POST /auth/verify", () => {
       body: JSON.stringify({ email, code }),
     });
     expect(res.status).toBe(200);
-    const body = await res.json<{ token: string; user: { id: string; email: string } }>();
-    expect(body.token).toBeTruthy();
-    expect(body.user.email).toBe(email);
+    const body = await res.json<{ success: boolean; data: { token: string; user: { email: string } } }>();
+    expect(body.success).toBe(true);
+    expect(body.data.token).toBeTruthy();
+    expect(body.data.user.email).toBe(email);
   });
 
   it("returns wrong_code for incorrect code", async () => {
@@ -106,10 +106,9 @@ describe("POST /auth/verify", () => {
       body: JSON.stringify({ email, code: "999999" }),
     });
     expect(res.status).toBe(400);
-    const body = await res.json<{ error: string }>();
+    const body = await res.json<{ success: boolean; error: string }>();
     expect(body.error).toBe("wrong_code");
 
-    // Check attempts incremented
     const row = await env.DB.prepare("SELECT attempts FROM auth_otps WHERE email = ?")
       .bind(email)
       .first<{ attempts: number }>();
@@ -131,7 +130,7 @@ describe("POST /auth/verify", () => {
       body: JSON.stringify({ email, code: "123456" }),
     });
     expect(res.status).toBe(400);
-    const body = await res.json<{ error: string }>();
+    const body = await res.json<{ success: boolean; error: string }>();
     expect(body.error).toBe("expired");
   });
 
@@ -150,7 +149,7 @@ describe("POST /auth/verify", () => {
       body: JSON.stringify({ email, code: "123456" }),
     });
     expect(res.status).toBe(429);
-    const body = await res.json<{ error: string }>();
+    const body = await res.json<{ success: boolean; error: string }>();
     expect(body.error).toBe("too_many_attempts");
   });
 
@@ -179,12 +178,11 @@ describe("POST /auth/verify", () => {
 describe("GET /auth/me", () => {
   it("returns user for valid token", async () => {
     const { token } = await createTestUser("me@test.com");
-    const res = await fetchApp("/auth/me", {
-      headers: authHeader(token),
-    });
+    const res = await fetchApp("/auth/me", { headers: authHeader(token) });
     expect(res.status).toBe(200);
-    const body = await res.json<{ user: { email: string } }>();
-    expect(body.user.email).toBe("me@test.com");
+    const body = await res.json<{ success: boolean; data: { user: { email: string } } }>();
+    expect(body.success).toBe(true);
+    expect(body.data.user.email).toBe("me@test.com");
   });
 
   it("returns 401 without token", async () => {
