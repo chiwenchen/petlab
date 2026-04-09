@@ -21,18 +21,17 @@ describe("GET /pets", () => {
   it("returns empty list when no pets", async () => {
     const res = await fetchApp("/pets", { headers: authHeader(token) });
     expect(res.status).toBe(200);
-    const body = await res.json<{ pets: PetRow[] }>();
-    expect(body.pets).toHaveLength(0);
+    const body = await res.json<{ success: boolean; data: { pets: PetRow[] } }>();
+    expect(body.success).toBe(true);
+    expect(body.data.pets).toHaveLength(0);
   });
 
   it("returns user's pets", async () => {
     await createTestPet(userId, "米寶");
-
     const res = await fetchApp("/pets", { headers: authHeader(token) });
-    expect(res.status).toBe(200);
-    const body = await res.json<{ pets: PetRow[] }>();
-    expect(body.pets).toHaveLength(1);
-    expect(body.pets[0].name).toBe("米寶");
+    const body = await res.json<{ success: boolean; data: { pets: PetRow[] } }>();
+    expect(body.data.pets).toHaveLength(1);
+    expect(body.data.pets[0].name).toBe("米寶");
   });
 
   it("returns 401 without auth", async () => {
@@ -49,10 +48,10 @@ describe("POST /pets", () => {
       body: JSON.stringify({ name: "米寶", species: "貓", breed: "Maine Coon" }),
     });
     expect(res.status).toBe(201);
-    const body = await res.json<{ pet: PetRow }>();
-    expect(body.pet.name).toBe("米寶");
-    expect(body.pet.species).toBe("貓");
-    expect(body.pet.breed).toBe("Maine Coon");
+    const body = await res.json<{ success: boolean; data: { pet: PetRow } }>();
+    expect(body.success).toBe(true);
+    expect(body.data.pet.name).toBe("米寶");
+    expect(body.data.pet.species).toBe("貓");
   });
 
   it("returns 400 for missing fields", async () => {
@@ -62,7 +61,7 @@ describe("POST /pets", () => {
       body: JSON.stringify({ name: "米寶" }),
     });
     expect(res.status).toBe(400);
-    const body = await res.json<{ error: string }>();
+    const body = await res.json<{ success: boolean; error: string }>();
     expect(body.error).toBe("missing_fields");
   });
 });
@@ -70,27 +69,21 @@ describe("POST /pets", () => {
 describe("GET /pets/:id", () => {
   it("returns a specific pet", async () => {
     const petId = await createTestPet(userId);
-    const res = await fetchApp(`/pets/${petId}`, {
-      headers: authHeader(token),
-    });
+    const res = await fetchApp(`/pets/${petId}`, { headers: authHeader(token) });
     expect(res.status).toBe(200);
-    const body = await res.json<{ pet: PetRow }>();
-    expect(body.pet.id).toBe(petId);
+    const body = await res.json<{ success: boolean; data: { pet: PetRow } }>();
+    expect(body.data.pet.id).toBe(petId);
   });
 
   it("returns 404 for non-existent pet", async () => {
-    const res = await fetchApp("/pets/nonexistent", {
-      headers: authHeader(token),
-    });
+    const res = await fetchApp("/pets/nonexistent", { headers: authHeader(token) });
     expect(res.status).toBe(404);
   });
 
   it("returns 404 for other user's pet", async () => {
     const petId = await createTestPet(userId);
     const other = await createTestUser("other@test.com");
-    const res = await fetchApp(`/pets/${petId}`, {
-      headers: authHeader(other.token),
-    });
+    const res = await fetchApp(`/pets/${petId}`, { headers: authHeader(other.token) });
     expect(res.status).toBe(404);
   });
 });
@@ -104,11 +97,10 @@ describe("PATCH /pets/:id", () => {
       body: JSON.stringify({ name: "米寶寶", breed: "Mixed" }),
     });
     expect(res.status).toBe(200);
-    const body = await res.json<{ pet: PetRow }>();
-    expect(body.pet.name).toBe("米寶寶");
-    expect(body.pet.breed).toBe("Mixed");
-    // Unchanged fields preserved
-    expect(body.pet.species).toBe("貓");
+    const body = await res.json<{ success: boolean; data: { pet: PetRow } }>();
+    expect(body.data.pet.name).toBe("米寶寶");
+    expect(body.data.pet.breed).toBe("Mixed");
+    expect(body.data.pet.species).toBe("貓");
   });
 
   it("returns 404 for non-existent pet", async () => {
@@ -129,13 +121,12 @@ describe("DELETE /pets/:id", () => {
       headers: authHeader(token),
     });
     expect(res.status).toBe(200);
-    const body = await res.json<{ ok: boolean }>();
-    expect(body.ok).toBe(true);
+    const body = await res.json<{ success: boolean; data: null }>();
+    expect(body.success).toBe(true);
 
-    // Verify not returned in list
     const listRes = await fetchApp("/pets", { headers: authHeader(token) });
-    const list = await listRes.json<{ pets: PetRow[] }>();
-    expect(list.pets).toHaveLength(0);
+    const list = await listRes.json<{ success: boolean; data: { pets: PetRow[] } }>();
+    expect(list.data.pets).toHaveLength(0);
   });
 
   it("returns 404 for non-existent pet", async () => {

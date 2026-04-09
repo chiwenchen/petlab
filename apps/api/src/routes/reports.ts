@@ -4,6 +4,7 @@ import { requireAuth } from "../middleware/auth";
 import { newId } from "../lib/ids";
 import { nowSec, type ReportRow, type ReportValueRow } from "../lib/db";
 import { ocrReport, type OcrResult } from "../lib/ocr";
+import { ok, err } from "../lib/response";
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -11,27 +12,15 @@ app.use("*", requireAuth);
 
 // ─── helpers ────────────────────────────────────────────
 
-/** Verify pet belongs to authed user and is not deleted. */
-async function ownedPet(
-  db: D1Database,
-  petId: string,
-  userId: string,
-): Promise<boolean> {
+async function ownedPet(db: D1Database, petId: string, userId: string): Promise<boolean> {
   const row = await db
-    .prepare(
-      `SELECT 1 FROM pets WHERE id = ?1 AND user_id = ?2 AND deleted_at IS NULL`,
-    )
+    .prepare(`SELECT 1 FROM pets WHERE id = ?1 AND user_id = ?2 AND deleted_at IS NULL`)
     .bind(petId, userId)
     .first();
   return row !== null;
 }
 
-/** Verify report belongs to a pet owned by authed user. */
-async function ownedReport(
-  db: D1Database,
-  reportId: string,
-  userId: string,
-): Promise<ReportRow | null> {
+async function ownedReport(db: D1Database, reportId: string, userId: string): Promise<ReportRow | null> {
   const row = await db
     .prepare(
       `SELECT r.* FROM reports r
@@ -44,64 +33,40 @@ async function ownedReport(
   return row ?? null;
 }
 
-/** Insert report_values rows from OCR result. */
-async function insertValues(
-  db: D1Database,
-  reportId: string,
-  values: OcrResult["values"],
-): Promise<void> {
+async function insertValues(db: D1Database, reportId: string, values: OcrResult["values"]): Promise<void> {
   const stmts = values.map((v, i) =>
     db
       .prepare(
         `INSERT INTO report_values (id, report_id, name, value, unit, ref_low, ref_high, flag, display_order)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`,
       )
-      .bind(
-        newId(),
-        reportId,
-        v.name,
-        v.value,
-        v.unit ?? null,
-        v.ref_low ?? null,
-        v.ref_high ?? null,
-        v.flag ?? null,
-        i,
-      ),
+      .bind(newId(), reportId, v.name, v.value, v.unit ?? null, v.ref_low ?? null, v.ref_high ?? null, v.flag ?? null, i),
   );
-
-  // D1 batch — all in one round-trip
   if (stmts.length > 0) {
     await db.batch(stmts);
   }
 }
 
-/** Fetch all values for a report. */
-async function getValues(
-  db: D1Database,
-  reportId: string,
-): Promise<ReportValueRow[]> {
+async function getValues(db: D1Database, reportId: string): Promise<ReportValueRow[]> {
   const result = await db
-    .prepare(
-      `SELECT * FROM report_values WHERE report_id = ?1 ORDER BY display_order ASC`,
-    )
+    .prepare(`SELECT * FROM report_values WHERE report_id = ?1 ORDER BY display_order ASC`)
     .bind(reportId)
     .all<ReportValueRow>();
   return result.results;
 }
 
-// ─── POST /pets/:petId/reports — upload image → OCR → save ──
+// ─── POST /pets/:petId/reports ──────────────────────────
 
 app.post("/pets/:petId/reports", async (c) => {
   const { userId } = c.get("auth");
   const petId = c.req.param("petId");
 
   if (!(await ownedPet(c.env.DB, petId, userId))) {
-    return c.json({ error: "not_found" }, 404);
+    return err(c, "not_found", 404);
   }
 
-  // Accept multipart (field "image") or raw body
   const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
-  const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
+  const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
   let imageBytes: ArrayBuffer;
   let contentType: string;
@@ -111,7 +76,7 @@ app.post("/pets/:petId/reports", async (c) => {
     const formData = await c.req.formData();
     const file = formData.get("image") as unknown;
     if (!file || typeof file === "string" || !(file instanceof Blob)) {
-      return c.json({ error: "missing_image", message: "multipart field 'image' required" }, 400);
+      return err(c, "missing_image", 400);
     }
     imageBytes = await file.arrayBuffer();
     contentType = file.type || "image/jpeg";
@@ -119,41 +84,29 @@ app.post("/pets/:petId/reports", async (c) => {
     imageBytes = await c.req.arrayBuffer();
     contentType = ct;
   } else {
-    return c.json(
-      { error: "bad_content_type", message: "Send multipart/form-data with 'image' field, or raw image/* body" },
-      400,
-    );
+    return err(c, "bad_content_type", 400);
   }
 
-  if (imageBytes.byteLength === 0) {
-    return c.json({ error: "empty_image" }, 400);
-  }
-  if (imageBytes.byteLength > MAX_IMAGE_BYTES) {
-    return c.json({ error: "file_too_large", message: "Max 10 MB" }, 413);
-  }
+  if (imageBytes.byteLength === 0) return err(c, "empty_image", 400);
+  if (imageBytes.byteLength > MAX_IMAGE_BYTES) return err(c, "file_too_large", 413);
   if (!ALLOWED_TYPES.includes(contentType as (typeof ALLOWED_TYPES)[number])) {
-    return c.json({ error: "unsupported_image_type", message: "Allowed: jpeg, png, webp" }, 415);
+    return err(c, "unsupported_image_type", 415);
   }
 
-  // 1. Upload to R2
   const reportId = newId();
   const EXT_MAP: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
   const ext = EXT_MAP[contentType] ?? "jpg";
   const r2Key = `reports/${petId}/${reportId}.${ext}`;
-  await c.env.IMAGES.put(r2Key, imageBytes, {
-    httpMetadata: { contentType },
-  });
+  await c.env.IMAGES.put(r2Key, imageBytes, { httpMetadata: { contentType } });
 
-  // 2. OCR via Claude Vision
   let ocrResult: OcrResult;
   let rawJson: string;
   try {
     const result = await ocrReport(imageBytes, contentType, c.env.ANTHROPIC_API_KEY);
     ocrResult = result.parsed;
     rawJson = result.rawJson;
-  } catch (err) {
-    console.error("OCR failed", err);
-    // Still save the report with image, but no OCR data
+  } catch (e) {
+    console.error("OCR failed", e);
     const created_at = nowSec();
     await c.env.DB.prepare(
       `INSERT INTO reports (id, pet_id, image_r2_key, raw_ocr_json, created_at)
@@ -165,32 +118,18 @@ app.post("/pets/:petId/reports", async (c) => {
     const report = await c.env.DB.prepare(`SELECT * FROM reports WHERE id = ?1`)
       .bind(reportId)
       .first<ReportRow>();
-    return c.json(
-      {
-        report,
-        values: [],
-        ocr_error: "ocr_failed",
-      },
-      201,
-    );
+    return ok(c, { report, values: [], ocr_error: "ocr_failed" }, 201);
   }
 
-  // 3. Insert report + values
   const created_at = nowSec();
   await c.env.DB.prepare(
     `INSERT INTO reports (id, pet_id, test_date, hospital, machine, panel, image_r2_key, raw_ocr_json, created_at)
      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`,
   )
     .bind(
-      reportId,
-      petId,
-      ocrResult.test_date ?? null,
-      ocrResult.hospital ?? null,
-      ocrResult.machine ?? null,
-      ocrResult.panel ?? null,
-      r2Key,
-      rawJson,
-      created_at,
+      reportId, petId,
+      ocrResult.test_date ?? null, ocrResult.hospital ?? null, ocrResult.machine ?? null,
+      ocrResult.panel ?? null, r2Key, rawJson, created_at,
     )
     .run();
 
@@ -200,18 +139,17 @@ app.post("/pets/:petId/reports", async (c) => {
     .bind(reportId)
     .first<ReportRow>();
   const values = await getValues(c.env.DB, reportId);
-
-  return c.json({ report, values }, 201);
+  return ok(c, { report, values }, 201);
 });
 
-// ─── GET /pets/:petId/reports — list ────────────────────
+// ─── GET /pets/:petId/reports ───────────────────────────
 
 app.get("/pets/:petId/reports", async (c) => {
   const { userId } = c.get("auth");
   const petId = c.req.param("petId");
 
   if (!(await ownedPet(c.env.DB, petId, userId))) {
-    return c.json({ error: "not_found" }, 404);
+    return err(c, "not_found", 404);
   }
 
   const result = await c.env.DB.prepare(
@@ -221,31 +159,30 @@ app.get("/pets/:petId/reports", async (c) => {
   )
     .bind(petId)
     .all<ReportRow>();
-
-  return c.json({ reports: result.results });
+  return ok(c, { reports: result.results });
 });
 
-// ─── GET /reports/:id — single report with values ───────
+// ─── GET /reports/:id ───────────────────────────────────
 
 app.get("/reports/:id", async (c) => {
   const { userId } = c.get("auth");
   const id = c.req.param("id");
 
   const report = await ownedReport(c.env.DB, id, userId);
-  if (!report) return c.json({ error: "not_found" }, 404);
+  if (!report) return err(c, "not_found", 404);
 
   const values = await getValues(c.env.DB, id);
-  return c.json({ report, values });
+  return ok(c, { report, values });
 });
 
-// ─── PATCH /reports/:id — edit report metadata + values ─
+// ─── PATCH /reports/:id ─────────────────────────────────
 
 app.patch("/reports/:id", async (c) => {
   const { userId } = c.get("auth");
   const id = c.req.param("id");
 
   const existing = await ownedReport(c.env.DB, id, userId);
-  if (!existing) return c.json({ error: "not_found" }, 404);
+  if (!existing) return err(c, "not_found", 404);
 
   interface PatchBody {
     test_date?: string | null;
@@ -265,7 +202,6 @@ app.patch("/reports/:id", async (c) => {
   }
   const body: PatchBody = await c.req.json<PatchBody>().catch(() => ({}) as PatchBody);
 
-  // Update report fields
   const merged = {
     test_date: body.test_date !== undefined ? body.test_date : existing.test_date,
     hospital: body.hospital !== undefined ? body.hospital : existing.hospital,
@@ -281,9 +217,8 @@ app.patch("/reports/:id", async (c) => {
     .bind(merged.test_date, merged.hospital, merged.machine, merged.panel, merged.notes, id)
     .run();
 
-  // Update individual values if provided
   if (body.values && body.values.length > 200) {
-    return c.json({ error: "too_many_values", message: "Max 200 values per update" }, 400);
+    return err(c, "too_many_values", 400);
   }
   if (body.values && body.values.length > 0) {
     const stmts = body.values.map((v) =>
@@ -296,16 +231,7 @@ app.patch("/reports/:id", async (c) => {
              flag = COALESCE(?5, flag),
              name = COALESCE(?6, name)
          WHERE id = ?7 AND report_id = ?8`,
-      ).bind(
-        v.value ?? null,
-        v.unit ?? null,
-        v.ref_low ?? null,
-        v.ref_high ?? null,
-        v.flag ?? null,
-        v.name ?? null,
-        v.id,
-        id,
-      ),
+      ).bind(v.value ?? null, v.unit ?? null, v.ref_low ?? null, v.ref_high ?? null, v.flag ?? null, v.name ?? null, v.id, id),
     );
     await c.env.DB.batch(stmts);
   }
@@ -314,25 +240,23 @@ app.patch("/reports/:id", async (c) => {
     .bind(id)
     .first<ReportRow>();
   const values = await getValues(c.env.DB, id);
-  return c.json({ report, values });
+  return ok(c, { report, values });
 });
 
-// ─── DELETE /reports/:id — soft delete ──────────────────
+// ─── DELETE /reports/:id ────────────────────────────────
 
 app.delete("/reports/:id", async (c) => {
   const { userId } = c.get("auth");
   const id = c.req.param("id");
 
   const existing = await ownedReport(c.env.DB, id, userId);
-  if (!existing) return c.json({ error: "not_found" }, 404);
+  if (!existing) return err(c, "not_found", 404);
 
-  await c.env.DB.prepare(
-    `UPDATE reports SET deleted_at = ?1 WHERE id = ?2`,
-  )
+  await c.env.DB.prepare(`UPDATE reports SET deleted_at = ?1 WHERE id = ?2`)
     .bind(nowSec(), id)
     .run();
 
-  return c.json({ ok: true });
+  return ok(c, null);
 });
 
 export default app;

@@ -5,6 +5,8 @@ import type { Env, AppVariables } from "./types";
 import authRoutes from "./routes/auth";
 import petsRoutes from "./routes/pets";
 import reportsRoutes from "./routes/reports";
+import shareRoutes from "./routes/share";
+import publicRoutes from "./routes/public";
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -30,13 +32,15 @@ app.get("/", (c) =>
 
 app.route("/auth", authRoutes);
 app.route("/pets", petsRoutes);
+app.route("/", publicRoutes);
 app.route("/", reportsRoutes);
+app.route("/", shareRoutes);
 
 app.onError((err, c) => {
   console.error("unhandled", err);
-  return c.json({ error: "internal_error", message: err.message }, 500);
+  return c.json({ success: false, error: "internal_error" }, 500);
 });
 
-app.notFound((c) => c.json({ error: "not_found" }, 404));
+app.notFound((c) => c.json({ success: false, error: "not_found" }, 404));
 
 export default app;

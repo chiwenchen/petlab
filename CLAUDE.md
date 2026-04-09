@@ -185,8 +185,8 @@ bunx wrangler secret put OTP_FROM_EMAIL
 
 - [x] **Phase 0** — Repo skeleton + monorepo
 - [x] **Phase 1** — Backend auth + pets CRUD
-- [ ] **Phase 2** — OCR endpoint (`POST /reports`, single + batch)
-- [ ] **Phase 3** — Next.js web viewer
+- [x] **Phase 2** — OCR endpoint (`POST /reports`, single + batch)
+- [x] **Phase 3** — Next.js web viewer + share/public API + envelope format
 - [ ] **Phase 4** — iOS skeleton + auth flow
 - [ ] **Phase 5** — iOS capture + OCR happy path
 - [ ] **Phase 6** — iOS sharing

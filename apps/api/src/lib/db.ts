@@ -45,4 +45,15 @@ export interface ReportValueRow {
   display_order: number | null;
 }
 
+export interface ShareTokenRow {
+  token: string;
+  pet_id: string;
+  scope: string;
+  report_ids_json: string | null;
+  created_at: number;
+  last_accessed_at: number | null;
+  access_count: number;
+  revoked_at: number | null;
+}
+
 export const nowSec = (): number => Math.floor(Date.now() / 1000);
