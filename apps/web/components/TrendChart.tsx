@@ -52,8 +52,8 @@ export function TrendChart({ series }: Props) {
           </p>
         ) : null}
       </div>
-      <div className="mt-2 h-44 w-full">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="mt-2 w-full">
+        <ResponsiveContainer width="100%" height={180}>
           <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 8 }}>
             <CartesianGrid stroke="#f3f4f6" vertical={false} />
             <XAxis

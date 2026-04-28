@@ -39,10 +39,17 @@ function parseNumberOrNull(s: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function toDateInputValue(raw: string | null | undefined): string {
+  if (!raw) return "";
+  // <input type="date"> only accepts yyyy-MM-dd; OCR returns ISO datetime.
+  const m = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : "";
+}
+
 export function EditForm({ reportId, initialReport, initialValues }: Props) {
   const router = useRouter();
   const [report, setReport] = useState({
-    test_date: initialReport.test_date ?? "",
+    test_date: toDateInputValue(initialReport.test_date),
     hospital: initialReport.hospital ?? "",
     machine: initialReport.machine ?? "",
     panel: initialReport.panel ?? "",
