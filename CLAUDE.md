@@ -16,19 +16,18 @@ like a real thing" gets cut.
 ## Architecture
 
 ```
-iOS app (SwiftUI)  →  Cloudflare Workers (Hono)  ←  Next.js (Cloudflare Pages)
-飼主資料輸入管道       api.petlab.redarch.dev          petlab.redarch.dev
-                            ↓                              ↑
-                      D1 + R2 + Claude Vision        醫生看的閱讀介面
+Next.js Web App (Cloudflare Pages)  →  Cloudflare Workers (Hono)
+petlab.redarch.dev                      api.petlab.redarch.dev
+飼主上傳 + 醫生唯讀                          ↓
+                                       D1 + R2 + Claude Vision
 ```
 
 - **Backend** — `apps/api`. Hono on Workers. D1 for relational, R2 for images.
   OCR via Claude Vision (`claude-opus-4-6` / `claude-sonnet-4-6`). Email OTP via Resend.
-- **Web viewer** — `apps/web` (Phase 3, 尚未存在). Next.js SSR, recharts for trends,
-  no SPA complexity. Public read by share token, no auth.
-- **iOS** — `apps/ios` (Phase 4, 尚未存在). SwiftUI, native, distributed via Xcode
-  free provisioning (7-day cert) for v1 — 不等 TestFlight 審核。Possibly WKWebView
-  the trends page from web viewer to avoid maintaining two chart implementations.
+- **Web app** — `apps/web`. Next.js SSR on Cloudflare Pages, recharts for trends.
+  飼主登入後可上傳/編輯；醫生用 share token 唯讀。Phase 0-4 已完成 viewer + 部署 config，
+  接下來補上傳 UI + trends + auth UI。
+- **~~iOS~~** — 砍掉。4/13 已過，pivot 到 web-only。`apps/ios/` 保留空資料夾未刪。
 
 ### Why D1 not Postgres
 v1 的 schema 簡單、寫入流量極低、不需要 pgvector。D1 + Cloudflare 一條龍少一個外
@@ -45,8 +44,8 @@ D1 + R2 + Pages 同生態，免費 tier 對 v1 綽綽有餘。
 petlab/
 ├── apps/
 │   ├── api/          Cloudflare Workers (Hono) backend
-│   ├── web/          Next.js web viewer (Phase 3)
-│   └── ios/          SwiftUI iOS app (Phase 4)
+│   ├── web/          Next.js web app (viewer + upload + trends)
+│   └── ios/          (空，砍掉，等回收)
 ├── .github/workflows/
 │   ├── auto-approve.yml   auto-approve chiwenchen 的 PR
 │   ├── auto-merge.yml     PR open → squash auto-merge
@@ -161,25 +160,28 @@ bunx wrangler secret put OTP_FROM_EMAIL
 所有 user-data table 用 `deleted_at` (nullable INTEGER unix seconds)，不硬刪。
 唯一例外：用戶刪帳號 — 那時候硬刪 (GDPR-style，align with「信任是基礎」)。
 
-## v1.0-Monday scope (locked)
+## v1.0 scope (web-only, post-pivot)
+
+> 4/13 deadline 已過。pivot：iOS 砍掉，改做 web-only 全流程。飼主跟醫生都用同一個
+> web app，差別只在權限（owner 登入後可上傳/編輯，公開分享連結唯讀）。
 
 **Keep:**
-- Email OTP 登入
+- Email OTP 登入（web）
 - 寵物寫死米寶（首次自動建）
-- 多選相片批次上傳 → OCR → 飼主 review/edit → 存
-- 報告列表 + 單筆完整數據
-- 「分享給醫生」→ token → iOS share sheet → LINE
-- Web viewer：完整時間軸 + 趨勢圖 (recharts) + 並排對比
+- Web 上傳檢驗報告（多檔 → OCR → 飼主 review/edit → 存）
+- 報告列表 + 單筆完整數據（owner view）
+- 趨勢圖 (recharts) — 跨報告時間序列
+- 「分享給醫生」→ token → 唯讀 viewer 連結
 
 **Cut to v1.1+:**
+- ❌ iOS / Android / 任何 native app
 - ❌ 多寵物 UI（schema 已支援）
-- ❌ Trends 在 iOS 內 (考慮用 WKWebView 嵌 web viewer)
 - ❌ 已分享連結列表 / 撤銷
 - ❌ 用藥/餵食記錄
 - ❌ AI 解讀
 - ❌ 提醒/通知
 - ❌ PDF 下載
-- ❌ Android / iPad / Apple Watch
+- ❌ 並排對比
 
 ## Phase status
 
@@ -187,11 +189,14 @@ bunx wrangler secret put OTP_FROM_EMAIL
 - [x] **Phase 1** — Backend auth + pets CRUD
 - [x] **Phase 2** — OCR endpoint (`POST /reports`, single + batch)
 - [x] **Phase 3** — Next.js web viewer + share/public API + envelope format
-- [ ] **Phase 4** — iOS skeleton + auth flow
-- [ ] **Phase 5** — iOS capture + OCR happy path
-- [ ] **Phase 6** — iOS sharing
-- [ ] **Phase 7** — Xcode 直裝手機
-- [ ] **Phase 8** — 米寶 4/13 回診實戰
+- [x] **Phase 4** — Cloudflare Pages deploy config + api custom domain
+- [ ] **Phase 5** — Fix Next 15 + React 18 build break；deploy web 上 Cloudflare Pages 拿到綠燈
+- [ ] **Phase 6** — Web 飼主登入 (Email OTP，呼叫現有 `/auth/request` + `/auth/verify`)
+- [ ] **Phase 7** — Web 上傳 UI：多檔拖放 → 呼叫 `/reports` OCR → 顯示 review/edit 表單 → 儲存
+- [ ] **Phase 8** — Web 報告列表 + 單筆 detail（owner view，與公開 viewer 共用 component）
+- [ ] **Phase 9** — Trends 趨勢圖（recharts，跨報告時間序列，e.g. WBC / RBC / 體重 / 腫瘤指標）
+- [ ] **Phase 10** — Web 分享流程（產生 token → 複製連結 / LINE 分享）
+- [ ] **Phase 11** — 米寶實戰：完整跑一次 真實報告 → 上傳 → review → trends → 分享給醫生
 
 詳細計畫: `../petlab-impl-plan-20260408-235522.md` (在 repo parent dir，未進 git)
 原始設計文件: `../petlab-design-20260408-233739.md`
@@ -202,7 +207,7 @@ bunx wrangler secret put OTP_FROM_EMAIL
 2. `git status` — 乾淨？on `main`？
 3. `git fetch -p && git log --oneline origin/main..HEAD` 跟 `git log --oneline HEAD..origin/main` — 跟 remote 同步？
 4. 如果要動 backend: `cd apps/api && bun run typecheck` 確認 baseline 是綠的
-5. 如果要動 iOS: 確認 Xcode + 手機在 USB 上、free provisioning cert 還沒過期
+5. 如果要動 web: `cd apps/web && bun install && bun run build` — 注意 baseline build 目前壞掉（Next 15 + React 18 useContext 不相容），Phase 5 修
 
 ## Tone for Claude when working on this project
 
