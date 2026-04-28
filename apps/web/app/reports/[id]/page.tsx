@@ -1,0 +1,45 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireUser } from "@/lib/auth-required";
+import { getReport } from "@/lib/api-client";
+import { ReportCard } from "@/components/ReportCard";
+
+export const runtime = "edge";
+
+interface Props {
+  params: Promise<{ id: string }>;
+}
+
+export default async function ReportDetailPage({ params }: Props) {
+  const { id } = await params;
+  const { token } = await requireUser();
+
+  let data;
+  try {
+    data = await getReport(token, id);
+  } catch {
+    notFound();
+  }
+
+  const reportWithValues = { ...data.report, values: data.values };
+
+  return (
+    <main className="mx-auto w-full max-w-2xl px-4 py-8">
+      <header className="flex items-center justify-between">
+        <Link href="/dashboard" className="text-sm text-gray-500 underline">
+          ← 報告列表
+        </Link>
+        <Link
+          href={`/reports/${id}/edit`}
+          className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+        >
+          編輯
+        </Link>
+      </header>
+
+      <div className="mt-4">
+        <ReportCard report={reportWithValues} />
+      </div>
+    </main>
+  );
+}
