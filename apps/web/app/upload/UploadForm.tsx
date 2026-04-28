@@ -102,14 +102,20 @@ export function UploadForm({ petId }: Props) {
         </ul>
       ) : null}
 
-      <button
-        type="button"
-        onClick={startUpload}
-        disabled={busy || items.length === 0}
-        className="mt-6 w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 disabled:bg-gray-300"
-      >
-        {busy ? "上傳中…" : `開始上傳並 OCR (${items.length})`}
-      </button>
+      {items.length > 0 ? (
+        <button
+          type="button"
+          onClick={startUpload}
+          disabled={busy}
+          className="mt-6 w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 disabled:bg-gray-300"
+        >
+          {busy
+            ? "上傳中…"
+            : items.length === 1
+              ? "開始上傳並 OCR"
+              : `開始上傳並 OCR ${items.length} 份`}
+        </button>
+      ) : null}
     </div>
   );
 }

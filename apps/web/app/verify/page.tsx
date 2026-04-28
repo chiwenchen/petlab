@@ -39,15 +39,15 @@ export default async function VerifyPage({ searchParams }: Props) {
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-12">
-      <h1 className="text-2xl font-bold">輸入驗證碼</h1>
+      <h1 className="text-2xl font-semibold text-gray-900">輸入驗證碼</h1>
       <p className="mt-2 text-sm text-gray-500">
-        驗證碼已寄到 <span className="font-medium">{email}</span>。
+        驗證碼已寄到 <span className="font-medium text-gray-700">{email}</span>。
       </p>
 
-      <form action={submitCode} className="mt-6 space-y-4">
+      <form action={submitCode} className="mt-8 space-y-4">
         <input type="hidden" name="email" value={email} />
         <div>
-          <label htmlFor="code" className="block text-sm font-medium">
+          <label htmlFor="code" className="block text-xs font-semibold uppercase tracking-wider text-gray-500">
             6 位數驗證碼
           </label>
           <input
@@ -59,7 +59,7 @@ export default async function VerifyPage({ searchParams }: Props) {
             pattern="[0-9]{6}"
             maxLength={6}
             autoComplete="one-time-code"
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-center text-2xl tracking-widest shadow-sm focus:border-gray-900 focus:outline-none"
+            className="mt-2 block w-full rounded-md border border-gray-300 bg-white px-3 py-3 text-center text-2xl tracking-[0.4em] tabular-nums focus:border-gray-900 focus:outline-none focus:ring-1 focus:ring-gray-900"
             placeholder="000000"
           />
         </div>
@@ -72,13 +72,13 @@ export default async function VerifyPage({ searchParams }: Props) {
 
         <button
           type="submit"
-          className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800"
+          className="w-full rounded-md bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2"
         >
           登入
         </button>
 
         <p className="text-center text-xs text-gray-500">
-          沒收到？<a href="/login" className="underline">重新寄送</a>
+          沒收到？<a href="/login" className="text-gray-700 hover:text-gray-900 hover:underline">重新寄送</a>
         </p>
       </form>
     </main>

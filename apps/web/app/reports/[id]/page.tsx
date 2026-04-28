@@ -24,14 +24,17 @@ export default async function ReportDetailPage({ params }: Props) {
   const reportWithValues = { ...data.report, values: data.values };
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
+    <main className="mx-auto w-full max-w-3xl px-4 py-8">
       <header className="flex items-center justify-between">
-        <Link href="/dashboard" className="text-sm text-gray-500 underline">
+        <Link
+          href="/dashboard"
+          className="text-sm text-gray-500 hover:text-gray-900"
+        >
           ← 報告列表
         </Link>
         <Link
           href={`/reports/${id}/edit`}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
         >
           編輯
         </Link>
