@@ -93,9 +93,14 @@ export function EditForm({ reportId, initialReport, initialValues }: Props) {
   async function discard(): Promise<void> {
     if (!confirm("確定刪除這份報告？")) return;
     setBusy(true);
+    setError(null);
     try {
-      await fetch(`/api/reports/${reportId}`, { method: "DELETE" });
+      const res = await fetch(`/api/reports/${reportId}`, { method: "DELETE" });
+      const json = (await res.json().catch(() => ({}))) as { success: boolean; error?: string };
+      if (!res.ok || !json.success) throw new Error(json.error ?? `http_${res.status}`);
       router.push("/dashboard");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "delete_failed");
     } finally {
       setBusy(false);
     }

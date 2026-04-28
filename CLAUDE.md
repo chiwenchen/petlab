@@ -190,13 +190,15 @@ bunx wrangler secret put OTP_FROM_EMAIL
 - [x] **Phase 2** — OCR endpoint (`POST /reports`, single + batch)
 - [x] **Phase 3** — Next.js web viewer + share/public API + envelope format
 - [x] **Phase 4** — Cloudflare Pages deploy config + api custom domain
-- [ ] **Phase 5** — Fix Next 15 + React 18 build break；deploy web 上 Cloudflare Pages 拿到綠燈
-- [ ] **Phase 6** — Web 飼主登入 (Email OTP，呼叫現有 `/auth/request` + `/auth/verify`)
-- [ ] **Phase 7** — Web 上傳 UI：多檔拖放 → 呼叫 `/reports` OCR → 顯示 review/edit 表單 → 儲存
-- [ ] **Phase 8** — Web 報告列表 + 單筆 detail（owner view，與公開 viewer 共用 component）
-- [ ] **Phase 9** — Trends 趨勢圖（recharts，跨報告時間序列，e.g. WBC / RBC / 體重 / 腫瘤指標）
-- [ ] **Phase 10** — Web 分享流程（產生 token → 複製連結 / LINE 分享）
-- [ ] **Phase 11** — 米寶實戰：完整跑一次 真實報告 → 上傳 → review → trends → 分享給醫生
+- [x] **Phase 5** — Fix Next 15 + React 18 build break；upgrade to Next 15.5 + React 19
+- [x] **Phase 6** — Web 飼主登入 (Email OTP，JWT in httpOnly cookie)
+- [x] **Phase 7** — Web 上傳 UI：多檔 → OCR → review/edit → 存
+- [x] **Phase 8** — Web 報告列表 + 單筆 detail（owner view，shared ReportCard）
+- [x] **Phase 9** — Trends 趨勢圖（recharts，跨報告時間序列，public viewer 也有）
+- [x] **Phase 10** — Web 分享流程（產生 token → 複製連結 / LINE 分享）
+- [ ] **Phase 11** — 米寶實戰：等下次回診 — 飼主 deploy + 真實上傳測試（**見 [TODO.md](./TODO.md)**）
+
+**Code 已寫完 Phase 5-10。Phase 11 的剩餘工作是 deploy / config / 真實 dogfood — 全部列在 [TODO.md](./TODO.md)。**
 
 詳細計畫: `../petlab-impl-plan-20260408-235522.md` (在 repo parent dir，未進 git)
 原始設計文件: `../petlab-design-20260408-233739.md`

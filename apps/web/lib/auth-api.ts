@@ -1,3 +1,4 @@
+import "server-only";
 import { API_BASE } from "./env";
 
 interface AuthUser {
@@ -26,7 +27,10 @@ export async function requestOtp(email: string): Promise<{ ok: boolean; error?: 
     body: JSON.stringify({ email }),
   });
   const body = (await res.json().catch(() => ({}))) as ApiEnvelope<unknown>;
-  if (!res.ok || !body.success) return { ok: false, error: body.error ?? `http_${res.status}` };
+  if (!res.ok || !body.success) {
+    console.error("requestOtp failed", { status: res.status, error: body.error });
+    return { ok: false, error: body.error ?? `http_${res.status}` };
+  }
   return { ok: true };
 }
 
@@ -38,6 +42,7 @@ export async function verifyOtp(email: string, code: string): Promise<AuthResult
   });
   const body = (await res.json().catch(() => ({}))) as ApiEnvelope<{ token: string; user: AuthUser }>;
   if (!res.ok || !body.success || !body.data) {
+    console.error("verifyOtp failed", { status: res.status, error: body.error });
     return { ok: false, error: body.error ?? `http_${res.status}` };
   }
   return { ok: true, data: body.data };
