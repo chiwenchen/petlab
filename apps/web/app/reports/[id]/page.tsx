@@ -27,16 +27,16 @@ export default async function ReportDetailPage({ params }: Props) {
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8">
       <AppNav email={user.email} />
-      <header className="mt-6 flex items-center justify-between">
+      <header className="mt-6 flex items-center justify-between gap-3">
         <Link
           href="/dashboard"
-          className="text-sm text-gray-500 hover:text-gray-900"
+          className="-ml-2 inline-flex min-h-[40px] items-center px-2 text-sm text-gray-500 hover:text-gray-900"
         >
           ← 報告列表
         </Link>
         <Link
           href={`/reports/${id}/edit`}
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+          className="inline-flex min-h-[40px] items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
           編輯
         </Link>
