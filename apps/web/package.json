@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "pages:build": "next-on-pages",
     "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui"
+    "e2e:ui": "playwright test --ui",
+    "e2e:prod": "playwright test --config=playwright.prod.config.ts"
   },
   "dependencies": {
     "next": "15.5.4",
