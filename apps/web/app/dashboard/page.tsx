@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth-required";
 import { ensureDefaultPet, listReports } from "@/lib/api-client";
+import { ShareButton } from "./ShareButton";
 
 export const runtime = "edge";
 
@@ -34,7 +35,7 @@ export default async function DashboardPage() {
         </form>
       </header>
 
-      <div className="mt-6 flex gap-3">
+      <div className="mt-6 flex flex-wrap gap-3">
         <Link
           href="/upload"
           className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
@@ -47,6 +48,7 @@ export default async function DashboardPage() {
         >
           趨勢圖
         </Link>
+        <ShareButton petId={pet.id} />
       </div>
 
       <h2 className="mt-8 text-sm font-semibold text-gray-700">
