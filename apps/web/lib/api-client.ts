@@ -129,3 +129,16 @@ export async function patchReport(
 export async function deleteReport(token: string, reportId: string): Promise<void> {
   await call<null>(token, "DELETE", `/reports/${reportId}`);
 }
+
+export interface ShareCreated {
+  token: string;
+  url: string;
+}
+
+export async function createShare(
+  token: string,
+  petId: string,
+  scope: "all" | "latest" | "recent_3" = "all",
+): Promise<ShareCreated> {
+  return call<ShareCreated>(token, "POST", `/pets/${petId}/share`, { scope });
+}
