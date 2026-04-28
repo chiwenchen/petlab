@@ -4,7 +4,7 @@ compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 
 # Custom domain (set up via Cloudflare dashboard or `wrangler deploy`)
-# routes = [{ pattern = "api.petlab.redarch.dev", custom_domain = true }]
+routes = [{ pattern = "api.petlab.redarch.dev", custom_domain = true }]
 
 [vars]
 APP_NAME = "PetLab"
@@ -16,7 +16,7 @@ JWT_TTL_SECONDS = "7776000"  # 90 days
 [[d1_databases]]
 binding = "DB"
 database_name = "petlab"
-database_id = "REPLACE_ME"
+database_id = "c1626519-931e-413e-889c-68d0b18db8e2"
 
 # R2 — run `wrangler r2 bucket create petlab-images`
 [[r2_buckets]]
