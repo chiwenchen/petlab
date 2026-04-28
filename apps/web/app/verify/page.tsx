@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { verifyOtp } from "@/lib/auth-api";
 import { setSessionCookie, getSessionToken } from "@/lib/session";
+import { Logo } from "@/components/Logo";
 
 export const runtime = "edge";
 
@@ -39,7 +40,8 @@ export default async function VerifyPage({ searchParams }: Props) {
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-12">
-      <h1 className="text-2xl font-semibold text-gray-900">輸入驗證碼</h1>
+      <Logo size={28} />
+      <h1 className="mt-8 text-2xl font-semibold text-gray-900">輸入驗證碼</h1>
       <p className="mt-2 text-sm text-gray-500">
         驗證碼已寄到 <span className="font-medium text-gray-700">{email}</span>。
       </p>

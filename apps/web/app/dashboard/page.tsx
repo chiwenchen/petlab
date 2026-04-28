@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth-required";
 import { ensureDefaultPet, listReports, getReport } from "@/lib/api-client";
+import { AppNav } from "@/components/AppNav";
 import { ShareButton } from "./ShareButton";
 
 export const runtime = "edge";
@@ -38,19 +39,10 @@ export default async function DashboardPage() {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8">
-      <header className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">{pet.name}</h1>
-          <p className="mt-1 text-xs text-gray-400">{user.email}</p>
-        </div>
-        <form action="/logout" method="post">
-          <button
-            type="submit"
-            className="text-xs text-gray-400 hover:text-gray-700"
-          >
-            登出
-          </button>
-        </form>
+      <AppNav email={user.email} />
+
+      <header className="mt-6">
+        <h1 className="text-3xl font-semibold tracking-tight text-gray-900">{pet.name}</h1>
       </header>
 
       {latest ? (
