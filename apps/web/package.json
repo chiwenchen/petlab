@@ -13,7 +13,8 @@
     "next": "15.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",

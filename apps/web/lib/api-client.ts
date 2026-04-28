@@ -1,3 +1,4 @@
+import "server-only";
 import { API_BASE } from "./env";
 import type { Pet, Report, ReportValue } from "./types";
 
