@@ -5,6 +5,8 @@ import { PetHeader } from "./PetHeader";
 import { ReportCard } from "./ReportCard";
 import { CompareView } from "./CompareView";
 
+export const runtime = "edge";
+
 interface Props {
   params: Promise<{ token: string }>;
 }
