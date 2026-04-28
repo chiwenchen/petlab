@@ -1,6 +1,5 @@
 import type { ViewerData } from "./types";
-
-const API_BASE = process.env.API_BASE_URL ?? "http://localhost:8787";
+import { API_BASE } from "./env";
 
 export async function fetchViewerData(
   token: string,
