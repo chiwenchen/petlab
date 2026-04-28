@@ -20,6 +20,12 @@ DerivedData/
 .next/
 out/
 
+# Playwright
+test-results/
+playwright-report/
+e2e/report/
+.vercel/
+
 # Editors
 .vscode/
 .idea/
