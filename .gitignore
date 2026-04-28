@@ -23,10 +23,14 @@ out/
 # Playwright
 test-results/
 playwright-report/
-e2e/report/
-e2e/report-prod/
+**/e2e/report/
+**/e2e/report-prod/
 .vercel/
+
+# Design audit artifacts (local-only)
+.gstack-design-audit/
 
 # Editors
 .vscode/
 .idea/
+.gstack/

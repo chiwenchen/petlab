@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth-required";
 import { ensureDefaultPet } from "@/lib/api-client";
 import { UploadForm } from "./UploadForm";
@@ -9,17 +10,20 @@ export default async function UploadPage() {
   const pet = await ensureDefaultPet(token);
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
+    <main className="mx-auto w-full max-w-3xl px-4 py-8">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">上傳檢驗報告</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {pet.name}（{pet.species === "cat" ? "貓" : pet.species}）
+          <h1 className="text-2xl font-semibold text-gray-900">上傳檢驗報告</h1>
+          <p className="mt-1 text-xs text-gray-500">
+            {pet.name} · {pet.species === "cat" ? "貓" : pet.species}
           </p>
         </div>
-        <a href="/dashboard" className="text-sm text-gray-500 underline">
-          ← 回到 dashboard
-        </a>
+        <Link
+          href="/dashboard"
+          className="text-sm text-gray-500 hover:text-gray-900"
+        >
+          ← 報告列表
+        </Link>
       </header>
       <UploadForm petId={pet.id} />
     </main>

@@ -55,7 +55,7 @@ test.describe("happy path: login → upload → OCR → list → share", () => {
     await page.waitForURL("**/dashboard", { timeout: 30_000 });
 
     // 7. Report appears in list
-    await expect(page.getByText("報告 (1)")).toBeVisible();
+    await expect(page.getByText(/所有報告\s*·\s*1/)).toBeVisible();
 
     // 8. Share button → URL appears
     await page.getByRole("button", { name: "分享給醫生" }).click();
