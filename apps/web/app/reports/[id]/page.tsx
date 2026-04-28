@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth-required";
 import { getReport } from "@/lib/api-client";
 import { ReportCard } from "@/components/ReportCard";
+import { AppNav } from "@/components/AppNav";
 
 export const runtime = "edge";
 
@@ -12,7 +13,7 @@ interface Props {
 
 export default async function ReportDetailPage({ params }: Props) {
   const { id } = await params;
-  const { token } = await requireUser();
+  const { token, user } = await requireUser();
 
   let data;
   try {
@@ -25,7 +26,8 @@ export default async function ReportDetailPage({ params }: Props) {
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8">
-      <header className="flex items-center justify-between">
+      <AppNav email={user.email} />
+      <header className="mt-6 flex items-center justify-between">
         <Link
           href="/dashboard"
           className="text-sm text-gray-500 hover:text-gray-900"

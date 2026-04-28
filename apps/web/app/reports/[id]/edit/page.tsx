@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth-required";
 import { getReport } from "@/lib/api-client";
+import { AppNav } from "@/components/AppNav";
 import { EditForm } from "./EditForm";
 
 export const runtime = "edge";
@@ -11,7 +12,7 @@ interface Props {
 
 export default async function EditReportPage({ params }: Props) {
   const { id } = await params;
-  const { token } = await requireUser();
+  const { token, user } = await requireUser();
 
   let data;
   try {
@@ -21,10 +22,11 @@ export default async function EditReportPage({ params }: Props) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">確認 OCR 結果</h1>
-        <a href="/dashboard" className="text-sm text-gray-500 underline">
+    <main className="mx-auto w-full max-w-3xl px-4 py-8">
+      <AppNav email={user.email} />
+      <header className="mt-6 flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-gray-900">確認 OCR 結果</h1>
+        <a href="/dashboard" className="text-sm text-gray-500 hover:text-gray-900">
           跳過
         </a>
       </header>

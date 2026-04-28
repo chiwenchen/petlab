@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requestOtp } from "@/lib/auth-api";
 import { getSessionToken } from "@/lib/session";
+import { Logo } from "@/components/Logo";
 
 export const runtime = "edge";
 
@@ -29,7 +30,8 @@ export default async function LoginPage({ searchParams }: Props) {
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-12">
-      <h1 className="text-2xl font-semibold text-gray-900">登入 PetLab</h1>
+      <Logo size={28} />
+      <h1 className="mt-8 text-2xl font-semibold text-gray-900">登入</h1>
       <p className="mt-2 text-sm text-gray-500">
         輸入 email，我們會寄一組 6 位數驗證碼給你。
       </p>
