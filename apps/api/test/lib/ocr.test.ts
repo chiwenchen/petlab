@@ -127,7 +127,7 @@ describe("ocrReport", () => {
     expect((opts.headers as Record<string, string>)["anthropic-version"]).toBe("2023-06-01");
 
     const body = JSON.parse(opts.body as string);
-    expect(body.model).toBe("claude-sonnet-4-6-20250514");
+    expect(body.model).toBe("claude-sonnet-4-6");
     expect(body.messages[0].content[0].source.media_type).toBe("image/png");
   });
 
