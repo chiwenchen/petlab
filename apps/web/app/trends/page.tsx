@@ -28,7 +28,10 @@ export default async function TrendsPage() {
             {pet.name} · {reportsList.length} 份報告
           </p>
         </div>
-        <Link href="/dashboard" className="text-sm text-gray-500 hover:text-gray-900">
+        <Link
+          href="/dashboard"
+          className="-mr-2 inline-flex min-h-[40px] items-center px-2 text-sm text-gray-500 hover:text-gray-900"
+        >
           ← 報告列表
         </Link>
       </header>
